@@ -45,10 +45,20 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     mapping (uint256 => TierDetails[]) public gnomon;
 
+    mapping (address => uint256) public playerNFTRewarded;
+
     // heart
     IHeart private heart;
 
+    // Mystery
+    address public mystery;
+
     uint256 public constant DENOMINATOR = 10000;
+
+    modifier onlyMystery () {
+        require(msg.sender == mystery, "unauthorised");
+        _;
+    }
 
     constructor() {
         _initBuyInCosts();
@@ -63,6 +73,10 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     function giveHeart (address _heart) external onlyOwner {
         heart = IHeart(_heart);
+    }
+
+    function discoverMystery (address _mystery) external onlyOwner {
+        mystery = _mystery;
     }
 
     function updateCommonTier(TierDetails[] memory _common) external onlyOwner {
@@ -120,7 +134,7 @@ contract Gnomon is Ownable, IERC721Receiver {
         uint256 tierSize = gnomon[tier].length;
         address nftToken = gnomon[tier][tierSize-1].token;
         if(_tierDetails.token == nftToken){
-            
+
         }
         else{
             // transfer erc20 tokens
