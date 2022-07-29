@@ -16,6 +16,13 @@ contract Gnomon is Ownable, IERC721Receiver {
     using SafeMath for uint256;
     using Address for address;
 
+    event RewardedFromGnomon (
+        address indexed winner,
+        address indexed token,
+        uint256 tier,
+        uint256 value
+    );
+
     uint256 public constant COMMON = 0;
     uint256 public constant RARE = 1;
     uint256 public constant LEGENDARY = 2;
@@ -27,6 +34,10 @@ contract Gnomon is Ownable, IERC721Receiver {
         uint256 amount;
         uint256 dropRate; //1e4
     }
+
+    TierDetails private UNLUCKYTIER = TierDetails(
+        address(0),0,0
+    );
 
     TierDetails[] public commonTiers;
     TierDetails[] public rareTiers;
@@ -97,6 +108,36 @@ contract Gnomon is Ownable, IERC721Receiver {
         gnomon[COMMON] = commonTiers;
         gnomon[RARE] = rareTiers;
         gnomon[LEGENDARY] = legendaryTiers;
+    }
+
+    // user pays token, wish for a chance
+    function spin(uint256 tier) external {
+        require(tier <= 2, "tier not supported");
+        TierDetails memory _tierDetails = _spin(tier);
+        if(_tierDetails.token == address(0))
+            emit RewardedFromGnomon(address(0), address(0), 0, 0);
+        // check if it is an nft
+        uint256 tierSize = gnomon[tier].length;
+        address nftToken = gnomon[tier][tierSize-1].token;
+        if(_tierDetails.token == nftToken){
+            
+        }
+        else{
+            // transfer erc20 tokens
+            IERC20(_tierDetails.token).transfer(msg.sender, _tierDetails.amount);
+            emit RewardedFromGnomon(msg.sender, _tierDetails.token, tier, _tierDetails.amount);
+        }
+    }
+
+    function _spin (uint256 tier) internal returns (TierDetails memory _tierDetails) {
+        uint256 pressure = heart.heartRate();
+        uint256 point = 0;
+        for(uint256 i = 0; i < gnomon[tier].length ; ++i) {
+            point+= gnomon[tier][i].dropRate;
+            if(point > pressure)
+                return gnomon[tier][i];
+        }
+        return UNLUCKYTIER;
     }
 
     // overrid onERC721Received to get nfts from safeTransfer
