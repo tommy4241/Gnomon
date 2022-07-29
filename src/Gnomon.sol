@@ -9,109 +9,96 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+import "./IHeart.sol";
+
 contract Gnomon is Ownable, IERC721Receiver {
 
     using SafeMath for uint256;
     using Address for address;
-    struct WheelRound {
-        uint256 lastTimePlayed;
-        uint256 totalPlayed;
+
+    uint256 public constant COMMON = 0;
+    uint256 public constant RARE = 1;
+    uint256 public constant LEGENDARY = 2;
+
+    uint256[3] public buyinCosts;
+
+    struct TierDetails {
+        address token;
+        uint256 amount;
+        uint256 dropRate; //10000
     }
 
-    // reward tokens
-    IERC20 private cell;
-    IERC20 private buildingMat;
-    IERC20 private aurorium;
-    IERC20 private persidian;
-    IERC20 private floxium;
-    IERC20 private deeds;
-    IERC20 private dataSheets;
-    IERC20 private  food;
-    IERC20 private mindMilk;
-    IERC20 private cookies;
-    IERC721 private mystBox;
+    TierDetails[] public commonTiers;
+    TierDetails[] public rareTiers;
+    TierDetails[] public legendaryTiers;
 
-    // reward token addresses
-    address private cellAddr;
-    address private buildingMatAddr;
-    address private auroriumAddr;
-    address private persidianAddr;
-    address private floxiumAddr;
-    address private deedsAddr;
-    address private dataSheetsAddr;
-    address private  foodAddr;
-    address private mindMilkAddr;
-    address private cookiesAddr;
-    address private mystBoxAddr;
+    mapping (uint256 => TierDetails[]) public gnomon;
 
-    // reward token balance mapping : token addr - token contract
-    mapping ( address => uint256 ) public balances;
-    
-    // rewards earned : user - token -reward
-    mapping ( address => mapping ( address => uint256 ) ) public rewards;
-    
-    // last time user earned an nft
-    mapping ( address => uint256 ) public lastNFTEarned;
+    // heart
+    IHeart private heart;
 
-    // user - {lastPlayed, lastPlayedTime}
-    mapping ( address => WheelRound ) private playedRounds;
+    uint256 public constant DENOMINATOR = 10000;
 
-    // top 5 wallets
-    address[5] public topWallets;
-
-    constructor (address [] memory _tokens, uint256 [] memory ratios) {
-        updateRewardTokens(_tokens);
+    constructor() {
+        _initBuyInCosts();
     }
 
-    // update reward token addresses
-    function updateRewardTokens (address[] memory _tokens) public onlyOwner {
-        bool areAllContracts = true;
-        for(uint8 i = 0; i < _tokens.length ; ++i){
-            address _token = _tokens[i];
-            areAllContracts = areAllContracts && _token.isContract();
-        }
-        require(areAllContracts, "Gnomon/Update-Reward-Token-Failed");
-
+    // internal
+    function _initBuyInCosts() internal {
+        buyinCosts[COMMON] = 100;
+        buyinCosts[RARE] = 500;
+        buyinCosts[LEGENDARY] = 1000;
     }
 
-    function _updateRewardTokens (address [] memory _tokens) internal {
-
-        cellAddr = _tokens[0];
-        cell = IERC20(cellAddr);
-
-        buildingMatAddr = _tokens[1];
-        buildingMat = IERC20(buildingMatAddr);
-
-        auroriumAddr = _tokens[2];
-        aurorium = IERC20(aurorium);
-
-        persidianAddr = _tokens[3];
-        persidian = IERC20(persidianAddr);
-
-        floxiumAddr = _tokens[4];
-        floxium = IERC20(floxiumAddr);
-
-        deedsAddr = _tokens[5];
-        deeds = IERC20(deeds);
-
-        dataSheetsAddr = _tokens[6];
-        dataSheets = IERC20(dataSheetsAddr);
-
-        foodAddr = _tokens[7];
-        food = IERC20(foodAddr);
-
-        mindMilkAddr = _tokens[8];
-        mindMilk = IERC20(mindMilkAddr);
-
-        cookiesAddr = _tokens[9];
-        cookies = IERC20(cookiesAddr);
-
-        mystBoxAddr = _tokens[10];
-        mystBox = IERC721(mystBoxAddr);
-        // check if mystBox is erc721
-        bytes4 interfaceID = type(IERC721).interfaceId;
-        require(mystBox.supportsInterface(interfaceID), "Gnomon/Invalid-nft-contract");
+    function giveHeart (address _heart) external onlyOwner {
+        heart = IHeart(_heart);
     }
+
+    function updateCommonTier(TierDetails[] memory _common) external onlyOwner {
+        _updateCommonTier(_common);
+    }
+
+    // internal
+    function _updateCommonTier(TierDetails[] memory _common) internal {
+        commonTiers = _common;
+    }
+
+    function updateRareTier(TierDetails[] memory _rare) external onlyOwner {
+        _updateRareTier(_rare);
+    }
+    // internal
+    function _updateRareTier(TierDetails[] memory _rare) internal {
+        rareTiers = _rare;
+    }
+
+    function updateLegendaryTier(TierDetails[] memory _legendary) external onlyOwner {
+        _updateLegendaryTier(_legendary);
+    }
+
+    // internal
+    function _updateLegendaryTier(TierDetails[] memory _legendary) internal {
+        legendaryTiers = _legendary;
+    }
+    function updateTiers (
+        TierDetails[] memory _common,
+        TierDetails[] memory _rare,
+        TierDetails[] memory _legendary
+    ) external onlyOwner {
+        _updateCommonTier(_common);
+        _updateRareTier(_rare);  
+        _updateLegendaryTier(_legendary);
+    }
+
+    function updateBuyInCosts (uint256[3] memory _costs) external onlyOwner {
+        buyinCosts = _costs;
+    }
+
+    function updateGnomon() external onlyOwner {
+        gnomon[COMMON] = commonTiers;
+        gnomon[RARE] = rareTiers;
+        gnomon[LEGENDARY] = legendaryTiers;
+    }
+
     // overrid onERC721Received to get nfts from safeTransfer
     function onERC721Received(address operator, address from, uint256 tokenId, bytes memory data) external override returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
