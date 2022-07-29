@@ -25,7 +25,7 @@ contract Gnomon is Ownable, IERC721Receiver {
     struct TierDetails {
         address token;
         uint256 amount;
-        uint256 dropRate; //10000
+        uint256 dropRate; //1e4
     }
 
     TierDetails[] public commonTiers;
