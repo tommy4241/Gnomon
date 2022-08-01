@@ -8,13 +8,16 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import "./IHeart.sol";
+import "./IMystery.sol";
 
 contract Gnomon is Ownable, IERC721Receiver {
 
     using SafeMath for uint256;
     using Address for address;
+    using ERC165Checker for address;
 
     event RewardedFromGnomon (
         address indexed winner,
@@ -45,6 +48,7 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     mapping (uint256 => TierDetails[]) public gnomon;
 
+    // last time user rewarded an nft
     mapping (address => uint256) public playerNFTRewarded;
 
     // heart
@@ -54,6 +58,8 @@ contract Gnomon is Ownable, IERC721Receiver {
     address public mystery;
 
     uint256 public constant DENOMINATOR = 10000;
+
+    bytes4 private constant InterfaceId_ERC721 = 0x80ac58cd;
 
     modifier onlyMystery () {
         require(msg.sender == mystery, "unauthorised");
@@ -76,6 +82,8 @@ contract Gnomon is Ownable, IERC721Receiver {
     }
 
     function discoverMystery (address _mystery) external onlyOwner {
+        // only erc-721 standard
+        require(_mystery.supportsInterface(InterfaceId_ERC721), "invalid mystery address");
         mystery = _mystery;
     }
 
@@ -129,15 +137,32 @@ contract Gnomon is Ownable, IERC721Receiver {
         require(tier <= 2, "tier not supported");
         TierDetails memory _tierDetails = _spin(tier);
         if(_tierDetails.token == address(0))
-            emit RewardedFromGnomon(address(0), address(0), 0, 0);
+            emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
         // check if it is an nft
         uint256 tierSize = gnomon[tier].length;
         address nftToken = gnomon[tier][tierSize-1].token;
         if(_tierDetails.token == nftToken){
-
+            if(block.timestamp - playerNFTRewarded[msg.sender] <= 7 days){
+                emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
+            }else{
+                require( IERC721(mystery).balanceOf(address(this)) > 0, "insufficient nft balance" );
+                // send an nft to the user
+                uint256 tokenIDToSend = IMystery(mystery).getRewardTokenID();
+                IERC721(mystery).transferFrom(
+                    address(this),
+                    msg.sender,
+                    tokenIDToSend
+                );
+                // update last reward time
+                playerNFTRewarded[msg.sender] = block.timestamp;
+                emit RewardedFromGnomon (msg.sender, _tierDetails.token, tier, tokenIDToSend);
+            }
         }
         else{
             // transfer erc20 tokens
+            require(IERC20(_tierDetails.token).balanceOf(address(this)) >= _tierDetails.amount,
+            string(abi.encode("insufficient ", _tierDetails.token, " balance"))
+            );
             IERC20(_tierDetails.token).transfer(msg.sender, _tierDetails.amount);
             emit RewardedFromGnomon(msg.sender, _tierDetails.token, tier, _tierDetails.amount);
         }
