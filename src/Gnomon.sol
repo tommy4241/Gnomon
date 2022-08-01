@@ -133,9 +133,9 @@ contract Gnomon is Ownable, IERC721Receiver {
         gnomon[LEGENDARY] = legendaryTiers;
     }
 
-    // user pays token, wish for a chance
+    // user pays token, wishes for a luck
     function spin(uint256 tier) external {
-        require(tier <= 2, "tier not supported");
+        require(tier > 2, "tier not supported");
         TierDetails memory _tierDetails = _spin(tier);
         if(_tierDetails.token == address(0))
             emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
