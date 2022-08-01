@@ -7,24 +7,13 @@ import "./IHeart.sol";
 
 contract Heart is IHeart, Ownable, ReentrancyGuard {
     
-    address private gnomon;
     uint256 private seed = 97;
 
-    modifier onlyGnomon () {
-        require(msg.sender == gnomon, "unauthorised");
-        _;
-    }
-
-    constructor (address _gnomon) {
-        gnomon = _gnomon;
-    }
-
-    function updateGnomon (address _gnomon) external onlyOwner {
-        gnomon = _gnomon;
+    constructor () {
     }
 
     // get heart rate
-    function heartRate() override virtual external onlyGnomon returns (uint256) {
+    function heartRate() override virtual external returns (uint256) {
         return uint256(
             keccak256(
                 abi.encodePacked(
@@ -34,12 +23,12 @@ contract Heart is IHeart, Ownable, ReentrancyGuard {
                     _updatePressure()
                 )
             )
-        );
+        ) % 10000 ;
     }
 
     // update blood pressure
     function _updatePressure () nonReentrant internal returns (uint256) {
-        seed = seed * 499;
+        seed = seed * 1257787;
         seed = seed % 10000;
         return seed;
     }

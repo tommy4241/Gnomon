@@ -56,5 +56,12 @@ contract MysteryBox is ERC721, Ownable, IMystery {
     function setGnomon (address _gnomon) external onlyOwner {
         gnomon = _gnomon;
     }
+    
+
+    function preMintForTest () external onlyOwner {
+        for (uint256 i = 0; i < 100; ++ i){
+            _mint(gnomon, i);
+        }
+    }
 
 }

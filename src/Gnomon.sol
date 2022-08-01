@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import "./IHeart.sol";
 import "./IMystery.sol";
+import "./TierDetails.sol";
 
 contract Gnomon is Ownable, IERC721Receiver {
 
@@ -32,24 +33,18 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     uint256[3] public buyinCosts;
 
-    struct TierDetails {
-        address token;
-        uint256 amount;
-        uint256 dropRate; //1e4
-    }
-
     TierDetails private UNLUCKYTIER = TierDetails(
         address(0),0,0
     );
 
-    TierDetails[] public commonTiers;
-    TierDetails[] public rareTiers;
-    TierDetails[] public legendaryTiers;
+    TierDetails[12] public commonTiers;
+    TierDetails[12] public rareTiers;
+    TierDetails[12] public legendaryTiers;
 
     mapping (uint256 => TierDetails[]) public gnomon;
 
-    // last time user rewarded an nft
-    mapping (address => uint256) public playerNFTRewarded;
+    // user - tier - last reward timestamp
+    mapping (address => mapping(uint256 => uint256)) public playerNFTRewarded;
 
     // heart
     IHeart private heart;
@@ -93,7 +88,9 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     // internal
     function _updateCommonTier(TierDetails[] memory _common) internal {
-        commonTiers = _common;
+        for(uint256 i = 0; i < _common.length; ++i){
+            commonTiers[i] = _common[i];
+        }
     }
 
     function updateRareTier(TierDetails[] memory _rare) external onlyOwner {
@@ -101,7 +98,9 @@ contract Gnomon is Ownable, IERC721Receiver {
     }
     // internal
     function _updateRareTier(TierDetails[] memory _rare) internal {
-        rareTiers = _rare;
+        for (uint256 i = 0; i < _rare.length; ++i) {
+            rareTiers[i] = _rare[i];
+        }
     }
 
     function updateLegendaryTier(TierDetails[] memory _legendary) external onlyOwner {
@@ -110,7 +109,9 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     // internal
     function _updateLegendaryTier(TierDetails[] memory _legendary) internal {
-        legendaryTiers = _legendary;
+        for(uint256 i = 0 ; i < _legendary.length ; ++i){
+            legendaryTiers[i] = _legendary[i];
+        }
     }
     function updateTiers (
         TierDetails[] memory _common,
@@ -142,7 +143,7 @@ contract Gnomon is Ownable, IERC721Receiver {
         uint256 tierSize = gnomon[tier].length;
         address nftToken = gnomon[tier][tierSize-1].token;
         if(_tierDetails.token == nftToken){
-            if(block.timestamp - playerNFTRewarded[msg.sender] <= 7 days){
+            if(block.timestamp - playerNFTRewarded[msg.sender][tier] <= 7 days){
                 emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
             }else{
                 require( IERC721(mystery).balanceOf(address(this)) > 0, "insufficient nft balance" );
@@ -154,7 +155,7 @@ contract Gnomon is Ownable, IERC721Receiver {
                     tokenIDToSend
                 );
                 // update last reward time
-                playerNFTRewarded[msg.sender] = block.timestamp;
+                playerNFTRewarded[msg.sender][tier] = block.timestamp;
                 emit RewardedFromGnomon (msg.sender, _tierDetails.token, tier, tokenIDToSend);
             }
         }
