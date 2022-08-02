@@ -60,6 +60,9 @@ contract GnomonTest is Test {
         // deploy heart
         heart = new Heart();
 
+        // set heart address to gnomon
+        gnomon.giveHeart(address(heart));
+
         // deploy mystery box & set gnomon
         mysteryBox = new MysteryBox("MysteryBox", "MBOX");
         mysteryBox.setGnomon(address(gnomon));
@@ -166,7 +169,6 @@ contract GnomonTest is Test {
         gnomon.buyTickets(0, 5);
         gnomon.buyTickets(1, 3);
         gnomon.buyTickets(2, 6);
-        cheats.stopPrank();
         
         // now log counts
         console.logUint(
@@ -178,16 +180,45 @@ contract GnomonTest is Test {
         console.logUint(
             gnomon.getTicketBalance(address(player1),2)
         );
+
+        // log original cell amount
+        console.logString("reward token balances before play");
+        
+        for(uint256 i = 0; i < 10; ++i){
+            console.logUint(
+                rewardTokens[i].balanceOf(address(player1))
+            );
+        }
+        console.logString("nft balance before play");
+
+        console.logUint(
+            mysteryBox.balanceOf(address(player1))
+        );
+        // spin 5 times
+        for(uint256 i = 0; i < 5; ++i){
+            gnomon.spin(0);
+        }
+        // log potential balances
+        console.logString("reward balances after 5 spins");
+        for(uint256 i = 0; i < 10; ++i){
+            console.logUint(
+                rewardTokens[i].balanceOf(address(player1))
+            );
+        }
+        console.logString("nft balance after play");
+
+        console.logUint(
+            mysteryBox.balanceOf(address(player1))
+        );
+        
+
+        cheats.stopPrank();
     }
 
     function testFailBuyTicket () public {
         cheats.startPrank(address(player1));
         gnomon.buyTickets(3, 2);
         cheats.stopPrank();
-    }
-
-    function testSpin () public {
-        
     }
 
 }
