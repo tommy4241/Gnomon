@@ -45,6 +45,8 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     // user - tier - last reward timestamp
     mapping (address => mapping(uint256 => uint256)) public playerNFTRewarded;
+    // user - tier - ticket amount
+    mapping (address => mapping (uint256 => uint256)) public tickets;
 
     // heart
     IHeart private heart;
@@ -56,8 +58,16 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     bytes4 private constant InterfaceId_ERC721 = 0x80ac58cd;
 
+    // cell token
+    IERC20 cell;
+
     modifier onlyMystery () {
         require(msg.sender == mystery, "unauthorised");
+        _;
+    }
+
+    modifier onlyTickets (uint256 tier) {
+        require(tickets[msg.sender][tier] > 0, "don't have any ticket");
         _;
     }
 
@@ -67,21 +77,22 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     // internal
     function _initBuyInCosts() internal {
-        buyinCosts[COMMON] = 100;
-        buyinCosts[RARE] = 500;
-        buyinCosts[LEGENDARY] = 1000;
+        buyinCosts[COMMON] = 100 * 1e18;
+        buyinCosts[RARE] = 500 * 1e18;
+        buyinCosts[LEGENDARY] = 1000 * 1e18;
     }
 
+    // set the rng address
     function giveHeart (address _heart) external onlyOwner {
         heart = IHeart(_heart);
     }
-
+    // set the reward nft addr
     function discoverMystery (address _mystery) external onlyOwner {
         // only erc-721 standard
         require(_mystery.supportsInterface(InterfaceId_ERC721), "invalid mystery address");
         mystery = _mystery;
     }
-
+    // common tier gnomon logics
     function updateCommonTier(TierDetails[] memory _common) external onlyOwner {
         _updateCommonTier(_common);
     }
@@ -92,7 +103,7 @@ contract Gnomon is Ownable, IERC721Receiver {
             commonTiers[i] = _common[i];
         }
     }
-
+    // update rare tier gnomon logics
     function updateRareTier(TierDetails[] memory _rare) external onlyOwner {
         _updateRareTier(_rare);
     }
@@ -102,7 +113,7 @@ contract Gnomon is Ownable, IERC721Receiver {
             rareTiers[i] = _rare[i];
         }
     }
-
+    // update legendary tier gnomon logics
     function updateLegendaryTier(TierDetails[] memory _legendary) external onlyOwner {
         _updateLegendaryTier(_legendary);
     }
@@ -113,6 +124,7 @@ contract Gnomon is Ownable, IERC721Receiver {
             legendaryTiers[i] = _legendary[i];
         }
     }
+    // update all 3 tiers
     function updateTiers (
         TierDetails[] memory _common,
         TierDetails[] memory _rare,
@@ -122,20 +134,32 @@ contract Gnomon is Ownable, IERC721Receiver {
         _updateRareTier(_rare);  
         _updateLegendaryTier(_legendary);
     }
-
+    // update cell token address
+    function updateCell (address _cell) external onlyOwner {
+        cell = IERC20(_cell);
+    }
+    // update buy in costs of 3 tiers
     function updateBuyInCosts (uint256[3] memory _costs) external onlyOwner {
         buyinCosts = _costs;
     }
-
+    // update gnomon stored on chain, mapping of tier -> tier math
     function updateGnomon() external onlyOwner {
         gnomon[COMMON] = commonTiers;
         gnomon[RARE] = rareTiers;
         gnomon[LEGENDARY] = legendaryTiers;
     }
 
+    // buys amount of tickets for the tier, amount * buy in cost of the tier
+    function buyTickets (uint256 tier, uint256 amount) external {
+        require(tier < 3, "tier not supported");
+        cell.transferFrom(msg.sender, address(this), amount.mul(buyinCosts[tier]));
+        uint256 originalAmount = tickets[msg.sender][tier];
+        tickets[msg.sender][tier] = (originalAmount + amount);
+    }
+
     // user pays token, wishes for a luck
-    function spin(uint256 tier) external {
-        require(tier > 2, "tier not supported");
+    function spin(uint256 tier)  external onlyTickets(tier) {
+        require(tier < 3, "tier not supported");
         TierDetails memory _tierDetails = _spin(tier);
         if(_tierDetails.token == address(0))
             emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
