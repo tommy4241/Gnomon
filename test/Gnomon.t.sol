@@ -78,7 +78,18 @@ contract GnomonTest is Test {
         gnomon.updateCell(address(rewardTokens[0]));
 
         // users need to have some cell tokens to play
+        deal(address(rewardTokens[0]), address(player1), 10000e18);
+        deal(address(rewardTokens[0]), address(player2), 10000e18);
         
+        // increase allowances
+        cheats.startPrank(address(player1));
+        for(uint256 i = 0; i < 10; ++i)
+            rewardTokens[i].approve(address(gnomon), type(uint256).max);
+        cheats.stopPrank();
+        cheats.startPrank(address(player2));
+        for(uint256 i = 0; i < 10; ++i)
+            rewardTokens[i].approve(address(gnomon), type(uint256).max);
+        cheats.stopPrank();
 
         // update common tier
         _commonTier.push( TierDetails({token : address(rewardTokens[0]), amount : 1000, dropRate : 259}));
@@ -135,8 +146,44 @@ contract GnomonTest is Test {
 
     }
 
-    function testSpin() {
+    function testHeartRate () public {
+        console.logString("Heart Rates before updating seed");
+        for (uint256 i = 0; i < 5; ++i){
+            uint256 heartRate = heart.heartRate();
+            console.logUint(heartRate);
+        }
+        console.logString("update seed");
+        heart.updateSeed(323421);
+        console.logString("Heart Rates after updating seed");
+        for (uint256 i = 0; i < 5; ++i){
+            uint256 heartRate = heart.heartRate();
+            console.logUint(heartRate);
+        }
+    }
 
+    function testBuyTicket () public {
+        cheats.startPrank(address(player1));
+        gnomon.buyTickets(0, 5);
+        gnomon.buyTickets(1, 3);
+        gnomon.buyTickets(2, 6);
+        cheats.stopPrank();
+        
+        // now log counts
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),0)
+        );
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),1)
+        );
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),2)
+        );
+    }
+
+    function testFailBuyTicket () public {
+        cheats.startPrank(address(player1));
+        gnomon.buyTickets(3, 2);
+        cheats.stopPrank();
     }
 
 

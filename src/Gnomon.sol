@@ -82,6 +82,10 @@ contract Gnomon is Ownable, IERC721Receiver {
         buyinCosts[LEGENDARY] = 1000 * 1e18;
     }
 
+    function getTicketBalance (address player, uint256 tier) external view returns(uint256 balance) {
+        balance = tickets[player][tier];
+    }
+
     // set the rng address
     function giveHeart (address _heart) external onlyOwner {
         heart = IHeart(_heart);
