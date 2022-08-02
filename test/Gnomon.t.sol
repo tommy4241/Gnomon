@@ -15,9 +15,13 @@ import "../src/TierDetails.sol";
 
 import "./lib/MockUser.sol";
 import "./lib/MockERC20Token.sol";
+import "./lib/CheatCodes.sol";
 
 contract GnomonTest is Test {
+
     using SafeMath for uint256;
+
+    CheatCodes cheats = CheatCodes(HEVM_ADDRESS);
 
     Gnomon public gnomon;
     MysteryBox public mysteryBox;
@@ -47,6 +51,9 @@ contract GnomonTest is Test {
     
 
     function setUp() public {
+        // init dummy users
+        player1 = new MockUser();
+        player2 = new MockUser();
         // deploy gnomon
         gnomon = new Gnomon();
 
@@ -66,6 +73,12 @@ contract GnomonTest is Test {
             _temp.preMint();
             rewardTokens.push(_temp);
         }
+        
+        // set the cell token address to gnomon
+        gnomon.updateCell(address(rewardTokens[0]));
+
+        // users need to have some cell tokens to play
+        
 
         // update common tier
         _commonTier.push( TierDetails({token : address(rewardTokens[0]), amount : 1000, dropRate : 259}));
@@ -115,12 +128,15 @@ contract GnomonTest is Test {
 
         gnomon.updateLegendaryTier(_legendaryTier);
 
+        // now update gnomon logics
+        gnomon.updateGnomon();
+
         // now people can spin?
 
     }
 
     function testSpin() {
-        
+
     }
 
 
