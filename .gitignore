@@ -4,3 +4,4 @@ out/
 node_modules/
 .env
 test/V2.t.sol
+guide
