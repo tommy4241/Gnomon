@@ -186,5 +186,8 @@ contract GnomonTest is Test {
         cheats.stopPrank();
     }
 
+    function testSpin () public {
+        
+    }
 
 }
