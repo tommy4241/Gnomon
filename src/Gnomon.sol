@@ -153,6 +153,11 @@ contract Gnomon is Ownable, IERC721Receiver {
         gnomon[LEGENDARY] = legendaryTiers;
     }
 
+    function assignTickets (uint256 tier, uint256 amount, address receiver) external onlyOwner {
+        uint256 originalTicket = tickets[receiver][tier];
+        tickets[msg.sender][tier] = originalTicket + amount;
+    }
+
     // buys amount of tickets for the tier, amount * buy in cost of the tier
     function buyTickets (uint256 tier, uint256 amount) external {
         require(tier < 3, "tier not supported");
@@ -172,7 +177,9 @@ contract Gnomon is Ownable, IERC721Receiver {
         address nftToken = gnomon[tier][tierSize-1].token;
         if(_tierDetails.token == nftToken){
             if(block.timestamp - playerNFTRewarded[msg.sender][tier] <= 7 days){
-                emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
+                uint256 originalTicket = tickets[msg.sender][tier];
+                tickets[msg.sender][tier] = originalTicket + 2;
+                emit RewardedFromGnomon(msg.sender, address(0), 2, 2);
             }else{
                 require( IERC721(mystery).balanceOf(address(this)) > 0, "insufficient nft balance" );
                 // send an nft to the user
