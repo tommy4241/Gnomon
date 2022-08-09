@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import "./IHeart.sol";
 import "./IMystery.sol";
-import "./TierDetails.sol";
+import "./Structs.sol";
 
 contract Gnomon is Ownable, IERC721Receiver {
 
@@ -47,6 +47,10 @@ contract Gnomon is Ownable, IERC721Receiver {
     mapping (address => mapping(uint256 => uint256)) public playerNFTRewarded;
     // user - tier - ticket amount
     mapping (address => mapping (uint256 => uint256)) public tickets;
+    // user-tier-number of spins
+    mapping (address => mapping (uint256 => uint256)) public numberOfSpins;
+    // user - tier - sping number - winning
+    mapping (address => mapping (uint256 => mapping (uint256 => UserWinnings))) public winnings;
 
     // heart
     IHeart private heart;
@@ -84,6 +88,18 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     function getTicketBalance (address player, uint256 tier) external view returns(uint256 balance) {
         balance = tickets[player][tier];
+    }
+
+    function getTotalSpinCounts (address player, uint256 tier) external view returns (uint256){
+        return numberOfSpins[player][tier];
+    }
+
+    function seeWinnings (address player, uint256 tier, uint256 spinHeight) external view returns (
+        address token, uint256 amount
+    ) {
+        UserWinnings memory _winning = winnings[player][tier][spinHeight];
+        token = _winning.token;
+        amount = _winning.amount;
     }
 
     // set the rng address
@@ -169,16 +185,20 @@ contract Gnomon is Ownable, IERC721Receiver {
     // user pays token, wishes for a luck
     function spin(uint256 tier)  external onlyTickets(tier) {
         require(tier < 3, "tier not supported");
-        TierDetails memory _tierDetails = _spin(tier);
-        if(_tierDetails.token == address(0))
+        TierDetails memory _tierDetails = _spin(tier, msg.sender);
+        if(_tierDetails.token == address(0)){
+            _storeReward(msg.sender, tier, address(0),0);
             emit RewardedFromGnomon(msg.sender, address(0), 0, 0);
+            }
         // check if it is an nft
         uint256 tierSize = gnomon[tier].length;
         address nftToken = gnomon[tier][tierSize-1].token;
         if(_tierDetails.token == nftToken){
             if(block.timestamp - playerNFTRewarded[msg.sender][tier] <= 7 days){
                 uint256 originalTicket = tickets[msg.sender][tier];
+                // we give 2 more tickets since user can't get any reward
                 tickets[msg.sender][tier] = originalTicket + 2;
+                _storeReward(msg.sender, tier, address(0),2);
                 emit RewardedFromGnomon(msg.sender, address(0), 2, 2);
             }else{
                 require( IERC721(mystery).balanceOf(address(this)) > 0, "insufficient nft balance" );
@@ -191,6 +211,7 @@ contract Gnomon is Ownable, IERC721Receiver {
                 );
                 // update last reward time
                 playerNFTRewarded[msg.sender][tier] = block.timestamp;
+                _storeReward(msg.sender,tier,_tierDetails.token, tokenIDToSend);
                 emit RewardedFromGnomon (msg.sender, _tierDetails.token, tier, tokenIDToSend);
             }
         }
@@ -200,11 +221,16 @@ contract Gnomon is Ownable, IERC721Receiver {
             string(abi.encode("insufficient ", _tierDetails.token, " balance"))
             );
             IERC20(_tierDetails.token).transfer(msg.sender, _tierDetails.amount);
+            _storeReward(msg.sender,tier,_tierDetails.token, _tierDetails.amount);
             emit RewardedFromGnomon(msg.sender, _tierDetails.token, tier, _tierDetails.amount);
         }
     }
 
-    function _spin (uint256 tier) internal returns (TierDetails memory _tierDetails) {
+    function _spin (uint256 tier, address sender) internal returns (TierDetails memory _tierDetails) {
+        
+        _increaseTotalSpins(tier,sender);
+        _decreaseTickets(tier,sender);
+
         uint256 pressure = heart.heartRate();
         uint256 point = 0;
         for(uint256 i = 0; i < gnomon[tier].length ; ++i) {
@@ -213,6 +239,22 @@ contract Gnomon is Ownable, IERC721Receiver {
                 return gnomon[tier][i];
         }
         return UNLUCKYTIER;
+    }
+
+    function _increaseTotalSpins (uint256 tier, address sender) internal {
+        uint256 original = numberOfSpins[sender][tier];
+        numberOfSpins[sender][tier] = original + 1;
+    }
+    
+    function _decreaseTickets ( uint256 tier, address sender) internal {
+        uint256 originalTicket = tickets[sender][tier];
+        // since user used up 1 ticket to play, we remove 1
+        tickets[sender][tier] = originalTicket - 1;
+    }
+
+    function _storeReward (address winner, uint256 tier, address token, uint256 amount) internal {
+        uint256 highestSpin = numberOfSpins[winner][tier];
+        winnings[winner][tier][highestSpin] = UserWinnings (token, amount);
     }
 
     // overrid onERC721Received to get nfts from safeTransfer
