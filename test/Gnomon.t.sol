@@ -11,7 +11,7 @@ import "../src/Heart.sol";
 import "../src/IHeart.sol";
 import "../src/Mystery.sol";
 import "../src/IMystery.sol";
-import "../src/TierDetails.sol";
+import "../src/Structs.sol";
 
 import "./lib/MockUser.sol";
 import "./lib/MockERC20Token.sol";
@@ -211,8 +211,26 @@ contract GnomonTest is Test {
             mysteryBox.balanceOf(address(player1))
         );
         
-
         cheats.stopPrank();
+
+        console.logString("ticket balances after play");
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),0)
+        );
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),1)
+        );
+        console.logUint(
+            gnomon.getTicketBalance(address(player1),2)
+        );
+        console.logString("total spin counts");
+        console.logUint(gnomon.getTotalSpinCounts(address(player1), 0));
+        console.logString("player rewards");
+        address _token;
+        uint256 amount;
+        (_token, amount) = gnomon.seeWinnings(address(player1), 0, 5);
+        console.log(_token);
+        console.logUint(amount);
     }
 
     function testFailBuyTicket () public {
