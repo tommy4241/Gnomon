@@ -79,10 +79,6 @@ contract GnomonTest is Test {
         
         // set the cell token address to gnomon
         gnomon.updateCell(address(rewardTokens[0]));
-
-        // users need to have some cell tokens to play
-        deal(address(rewardTokens[0]), address(player1), 10000e18);
-        deal(address(rewardTokens[0]), address(player2), 10000e18);
         
         // increase allowances
         cheats.startPrank(address(player1));
@@ -95,7 +91,7 @@ contract GnomonTest is Test {
         cheats.stopPrank();
 
         // update common tier
-        _commonTier.push( TierDetails({token : address(rewardTokens[0]), amount : 1000, dropRate : 259}));
+        _commonTier.push( TierDetails({token : address(rewardTokens[0]), amount : 100, dropRate : 259}));
         _commonTier.push( TierDetails({token : address(rewardTokens[0]),amount : 200,dropRate : 431}));
         _commonTier.push( TierDetails({token : address(rewardTokens[1]),amount : 1,dropRate : 690}));
         _commonTier.push( TierDetails({token : address(rewardTokens[2]),amount : 5,dropRate : 517}));
@@ -111,7 +107,7 @@ contract GnomonTest is Test {
         gnomon.updateCommonTier( _commonTier );
 
         // update rare tier
-        _rareTier.push( TierDetails({token : address(rewardTokens[0]), amount : 5000, dropRate : 174}));
+        _rareTier.push( TierDetails({token : address(rewardTokens[0]), amount : 500, dropRate : 174}));
         _rareTier.push( TierDetails({token : address(rewardTokens[0]),amount : 1000,dropRate : 435}));
         _rareTier.push( TierDetails({token : address(rewardTokens[1]),amount : 5,dropRate : 696}));
         _rareTier.push( TierDetails({token : address(rewardTokens[2]),amount : 10,dropRate : 522}));
@@ -127,8 +123,8 @@ contract GnomonTest is Test {
         gnomon.updateRareTier(_rareTier);
 
         // update common tier
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[0]), amount : 1000, dropRate : 131}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[0]),amount : 200,dropRate : 437}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[0]), amount : 2000, dropRate : 131}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[0]),amount : 4000,dropRate : 437}));
         _legendaryTier.push( TierDetails({token : address(rewardTokens[1]),amount : 1,dropRate : 699}));
         _legendaryTier.push( TierDetails({token : address(rewardTokens[2]),amount : 5,dropRate : 524}));
         _legendaryTier.push( TierDetails({token : address(rewardTokens[3]),amount : 1,dropRate : 437}));
@@ -146,6 +142,9 @@ contract GnomonTest is Test {
         gnomon.updateGnomon();
 
         // now people can spin?
+        gnomon.assignTickets(0, 5, address(player1));
+        gnomon.assignTickets(1, 5, address(player1));
+        gnomon.assignTickets(2, 33, address(player1));
 
     }
 
@@ -166,9 +165,6 @@ contract GnomonTest is Test {
 
     function testBuyTicket () public {
         cheats.startPrank(address(player1));
-        gnomon.buyTickets(0, 5);
-        gnomon.buyTickets(1, 3);
-        gnomon.buyTickets(2, 6);
         
         // now log counts
         console.logUint(
@@ -195,8 +191,8 @@ contract GnomonTest is Test {
             mysteryBox.balanceOf(address(player1))
         );
         // spin 5 times
-        for(uint256 i = 0; i < 5; ++i){
-            gnomon.spin(0);
+        for(uint256 i = 0; i < 33; ++i){
+            gnomon.spin(2);
         }
         // log potential balances
         console.logString("reward balances after 5 spins");
@@ -224,13 +220,18 @@ contract GnomonTest is Test {
             gnomon.getTicketBalance(address(player1),2)
         );
         console.logString("total spin counts");
-        console.logUint(gnomon.getTotalSpinCounts(address(player1), 0));
+        console.logUint(gnomon.getTotalSpinCounts(address(player1), 2));
         console.logString("player rewards");
         address _token;
         uint256 amount;
         (_token, amount) = gnomon.seeWinnings(address(player1), 0, 5);
         console.log(_token);
         console.logUint(amount);
+        // 
+        for(uint256 i = 0; i < 33 ; ++ i){
+            (,uint256 amount )= gnomon.seeWinnings(address(player1), 2, i);
+            console.logUint(amount);
+        }
     }
 
     function testFailBuyTicket () public {

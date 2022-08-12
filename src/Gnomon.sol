@@ -171,7 +171,7 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     function assignTickets (uint256 tier, uint256 amount, address receiver) external onlyOwner {
         uint256 originalTicket = tickets[receiver][tier];
-        tickets[msg.sender][tier] = originalTicket + amount;
+        tickets[receiver][tier] = originalTicket + amount;
     }
 
     // buys amount of tickets for the tier, amount * buy in cost of the tier
