@@ -125,15 +125,15 @@ contract GnomonTest is Test {
         // update common tier
         _legendaryTier.push( TierDetails({token : address(rewardTokens[0]), amount : 2000, dropRate : 131}));
         _legendaryTier.push( TierDetails({token : address(rewardTokens[0]),amount : 4000,dropRate : 437}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[1]),amount : 1,dropRate : 699}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[2]),amount : 5,dropRate : 524}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[3]),amount : 1,dropRate : 437}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[4]),amount : 1,dropRate : 349}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[5]),amount : 1,dropRate : 524}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[6]),amount : 1,dropRate : 699}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[7]),amount : 1,dropRate : 1747}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[8]),amount : 1,dropRate : 2620}));
-        _legendaryTier.push( TierDetails({token : address(rewardTokens[9]),amount : 1,dropRate : 1747}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[1]),amount : 10,dropRate : 699}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[2]),amount : 20,dropRate : 524}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[3]),amount : 3,dropRate : 437}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[4]),amount : 3,dropRate : 349}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[5]),amount : 3,dropRate : 524}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[6]),amount : 3,dropRate : 699}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[7]),amount : 10,dropRate : 1747}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[8]),amount : 10,dropRate : 2620}));
+        _legendaryTier.push( TierDetails({token : address(rewardTokens[9]),amount : 10,dropRate : 1747}));
         _legendaryTier.push( TierDetails({token : address(mysteryBox),amount : 1,dropRate : 87}));
 
         gnomon.updateLegendaryTier(_legendaryTier);
@@ -238,6 +238,26 @@ contract GnomonTest is Test {
         cheats.startPrank(address(player1));
         gnomon.buyTickets(3, 2);
         cheats.stopPrank();
+    }
+
+    function testWithdrawNFTs () public {
+        uint256[] memory ids = new uint[](3);
+        ids[0] = 44;
+        ids[1] = 45;
+        ids[2] = 46;
+        console.log(mysteryBox.ownerOf(44));
+        console.log(mysteryBox.ownerOf(45));
+        console.log(mysteryBox.ownerOf(46));
+        gnomon.withdrawNFTsBatch(address(mysteryBox), address(player1), ids);
+        console.log(mysteryBox.ownerOf(44));
+        console.log(mysteryBox.ownerOf(45));
+        console.log(mysteryBox.ownerOf(46));
+    }
+
+    function testWithdrawTokens () public {
+        console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
+        gnomon.withdrawTokens(address(rewardTokens[2]), address(player1), 10000000000);
+        console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
     }
 
 }

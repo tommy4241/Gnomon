@@ -16,7 +16,7 @@ contract MockERC20Token is ERC20, Ownable {
 
     // preMint 1000 tokens
     function preMint () public onlyOwner {
-        _mint(gnonmon, 1000 * 1e18);
+        _mint(gnonmon, 100000000 * 1e18);
     }
 
     function setGnomon (address _gnomon) external onlyOwner {

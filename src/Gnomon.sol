@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "./IHeart.sol";
 import "./IMystery.sol";
 import "./Structs.sol";
+import "./IERC20Detailed.sol";
 
 contract Gnomon is Ownable, IERC721Receiver {
 
@@ -92,6 +93,18 @@ contract Gnomon is Ownable, IERC721Receiver {
 
     function getTotalSpinCounts (address player, uint256 tier) external view returns (uint256){
         return numberOfSpins[player][tier];
+    }
+
+    function getBalances (address player) external view returns (uint256[] memory balances) {
+        for(uint256 i = 0; i < 11; ++i) {
+            IERC20 token = IERC20(commonTiers[i].token);
+            balances[i] = token.balanceOf(player);
+        }
+        IERC721 nftToken = IERC721(commonTiers[11].token);
+        balances[11] = nftToken.balanceOf(player);
+        balances[12] = tickets[player][0];
+        balances[13] = tickets[player][1];
+        balances[14] = tickets[player][2];
     }
 
     function seeWinnings (address player, uint256 tier, uint256 spinHeight) external view returns (
@@ -218,11 +231,12 @@ contract Gnomon is Ownable, IERC721Receiver {
         else{
             // transfer erc20 tokens
             require(IERC20(_tierDetails.token).balanceOf(address(this)) >= _tierDetails.amount,
-            string(abi.encode("insufficient ", _tierDetails.token, " balance"))
+            string(abi.encode("insufficient ", IERC20Detailed(_tierDetails.token).name(), " balance"))
             );
-            IERC20(_tierDetails.token).transfer(msg.sender, _tierDetails.amount);
-            _storeReward(msg.sender,tier,_tierDetails.token, _tierDetails.amount);
-            emit RewardedFromGnomon(msg.sender, _tierDetails.token, tier, _tierDetails.amount);
+            uint8 tokenDecimals = IERC20Detailed(_tierDetails.token).decimals();
+            IERC20(_tierDetails.token).transfer(msg.sender, _tierDetails.amount * 10 ** tokenDecimals);
+            _storeReward(msg.sender,tier,_tierDetails.token, _tierDetails.amount * 10 ** tokenDecimals);
+            emit RewardedFromGnomon(msg.sender, _tierDetails.token, tier, _tierDetails.amount * 10 ** tokenDecimals);
         }
     }
 
@@ -258,7 +272,7 @@ contract Gnomon is Ownable, IERC721Receiver {
     }
 
     function withdrawTokens (address token, address to, uint256 amount) external onlyOwner {
-        IERC20(token).transferFrom(address(this), to, amount);
+        IERC20(token).transfer(to, amount);
     }
     
     function withdrawNFT (address token, address to, uint256 tokenID) external onlyOwner {
