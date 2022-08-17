@@ -265,6 +265,11 @@ contract Gnomon is Ownable, IERC721Receiver {
         IERC721(token).transferFrom(address(this), to, tokenID);
     }
     
+    function withdrawNFTsBatch (address token, address to, uint256[] memory tokenIDs) external onlyOwner {
+        for(uint256 i = 0; i <  tokenIDs.length; ++i)
+            IERC721(token).transferFrom(address(this), to, tokenIDs[i]);
+    }
+    
     function withdraw (address payable to, uint256 amount) external onlyOwner {
         (bool success,) = to.call{value : amount}("");
         require(success, "ether transfer failed");
