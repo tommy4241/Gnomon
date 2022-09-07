@@ -67,7 +67,7 @@ contract GnomonTest is Test {
         mysteryBox = new MysteryBox("MysteryBox", "MBOX");
         mysteryBox.setGnomon(address(gnomon));
         // mint 10k nfts to the gnomon for testing
-        mysteryBox.preMintForTest();
+        // mysteryBox.preMintForTest();
 
         // deploy reward tokens
         for(uint256 i = 0; i < 10; ++i){
@@ -145,119 +145,135 @@ contract GnomonTest is Test {
         gnomon.assignTickets(0, 5, address(player1));
         gnomon.assignTickets(1, 5, address(player1));
         gnomon.assignTickets(2, 33, address(player1));
+        gnomon.assignTickets(0, 7, address(player2));
+        gnomon.assignTickets(1, 8, address(player2));
+        gnomon.assignTickets(2, 9, address(player2));
 
     }
 
-    function testHeartRate () public {
-        console.logString("Heart Rates before updating seed");
-        for (uint256 i = 0; i < 5; ++i){
-            uint256 heartRate = heart.heartRate();
-            console.logUint(heartRate);
-        }
-        console.logString("update seed");
-        heart.updateSeed(323421);
-        console.logString("Heart Rates after updating seed");
-        for (uint256 i = 0; i < 5; ++i){
-            uint256 heartRate = heart.heartRate();
-            console.logUint(heartRate);
-        }
-    }
+    // function testHeartRate () public {
+    //     console.logString("Heart Rates before updating seed");
+    //     for (uint256 i = 0; i < 5; ++i){
+    //         uint256 heartRate = heart.heartRate();
+    //         console.logUint(heartRate);
+    //     }
+    //     console.logString("update seed");
+    //     heart.updateSeed(323421);
+    //     console.logString("Heart Rates after updating seed");
+    //     for (uint256 i = 0; i < 5; ++i){
+    //         uint256 heartRate = heart.heartRate();
+    //         console.logUint(heartRate);
+    //     }
+    // }
 
-    function testBuyTicket () public {
-        cheats.startPrank(address(player1));
+    // function testBuyTicket () public {
+    //     cheats.startPrank(address(player1));
         
-        // now log counts
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),0)
-        );
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),1)
-        );
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),2)
-        );
+    //     // now log counts
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),0)
+    //     );
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),1)
+    //     );
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),2)
+    //     );
 
-        // log original cell amount
-        console.logString("reward token balances before play");
+    //     // log original cell amount
+    //     console.logString("reward token balances before play");
         
-        for(uint256 i = 0; i < 10; ++i){
-            console.logUint(
-                rewardTokens[i].balanceOf(address(player1))
-            );
-        }
-        console.logString("nft balance before play");
+    //     for(uint256 i = 0; i < 10; ++i){
+    //         console.logUint(
+    //             rewardTokens[i].balanceOf(address(player1))
+    //         );
+    //     }
+    //     console.logString("nft balance before play");
 
-        console.logUint(
-            mysteryBox.balanceOf(address(player1))
-        );
-        // spin 5 times
-        for(uint256 i = 0; i < 33; ++i){
-            gnomon.spin(2);
-        }
-        // log potential balances
-        console.logString("reward balances after 5 spins");
-        for(uint256 i = 0; i < 10; ++i){
-            console.logUint(
-                rewardTokens[i].balanceOf(address(player1))
-            );
-        }
-        console.logString("nft balance after play");
+    //     console.logUint(
+    //         mysteryBox.balanceOf(address(player1))
+    //     );
+    //     // spin 5 times
+    //     for(uint256 i = 0; i < 33; ++i){
+    //         gnomon.spin(2);
+    //     }
+    //     // log potential balances
+    //     console.logString("reward balances after 5 spins");
+    //     for(uint256 i = 0; i < 10; ++i){
+    //         console.logUint(
+    //             rewardTokens[i].balanceOf(address(player1))
+    //         );
+    //     }
+    //     console.logString("nft balance after play");
 
-        console.logUint(
-            mysteryBox.balanceOf(address(player1))
-        );
+    //     console.logUint(
+    //         mysteryBox.balanceOf(address(player1))
+    //     );
         
-        cheats.stopPrank();
+    //     cheats.stopPrank();
 
-        console.logString("ticket balances after play");
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),0)
-        );
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),1)
-        );
-        console.logUint(
-            gnomon.getTicketBalance(address(player1),2)
-        );
-        console.logString("total spin counts");
-        console.logUint(gnomon.getTotalSpinCounts(address(player1), 2));
-        console.logString("player rewards");
-        address _token;
-        uint256 amount;
-        (_token, amount) = gnomon.seeWinnings(address(player1), 0, 5);
-        console.log(_token);
-        console.logUint(amount);
-        // 
-        for(uint256 i = 0; i < 33 ; ++ i){
-            (,uint256 amount )= gnomon.seeWinnings(address(player1), 2, i);
-            console.logUint(amount);
-        }
-    }
+    //     console.logString("ticket balances after play");
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),0)
+    //     );
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),1)
+    //     );
+    //     console.logUint(
+    //         gnomon.getTicketBalance(address(player1),2)
+    //     );
+    //     console.logString("total spin counts");
+    //     console.logUint(gnomon.getTotalSpinCounts(address(player1), 2));
+    //     console.logString("player rewards");
+    //     address _token;
+    //     uint256 amount;
+    //     (_token, amount) = gnomon.seeWinnings(address(player1), 0, 5);
+    //     console.log(_token);
+    //     console.logUint(amount);
+    //     // 
+    //     for(uint256 i = 0; i < 33 ; ++ i){
+    //         (,uint256 amount )= gnomon.seeWinnings(address(player1), 2, i);
+    //         console.logUint(amount);
+    //     }
+    // }
 
-    function testFailBuyTicket () public {
-        cheats.startPrank(address(player1));
-        gnomon.buyTickets(3, 2);
-        cheats.stopPrank();
-    }
+    // function testFailBuyTicket () public {
+    //     cheats.startPrank(address(player1));
+    //     gnomon.buyTickets(3, 2);
+    //     cheats.stopPrank();
+    // }
 
-    function testWithdrawNFTs () public {
-        uint256[] memory ids = new uint[](3);
-        ids[0] = 44;
-        ids[1] = 45;
-        ids[2] = 46;
-        console.log(mysteryBox.ownerOf(44));
-        console.log(mysteryBox.ownerOf(45));
-        console.log(mysteryBox.ownerOf(46));
-        gnomon.withdrawNFTsBatch(address(mysteryBox), address(player1), ids);
-        console.log(mysteryBox.ownerOf(44));
-        console.log(mysteryBox.ownerOf(45));
-        console.log(mysteryBox.ownerOf(46));
-    }
+    // function testWithdrawNFTs () public {
+    //     uint256[] memory ids = new uint[](3);
+    //     ids[0] = 44;
+    //     ids[1] = 45;
+    //     ids[2] = 46;
+    //     console.log(mysteryBox.ownerOf(44));
+    //     console.log(mysteryBox.ownerOf(45));
+    //     console.log(mysteryBox.ownerOf(46));
+    //     gnomon.withdrawNFTsBatch(address(mysteryBox), address(player1), ids);
+    //     console.log(mysteryBox.ownerOf(44));
+    //     console.log(mysteryBox.ownerOf(45));
+    //     console.log(mysteryBox.ownerOf(46));
+    // }
 
-    function testWithdrawTokens () public {
-        console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
-        gnomon.withdrawTokens(address(rewardTokens[2]), address(player1), 10000000000);
-        console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
+    // function testWithdrawTokens () public {
+    //     console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
+    //     gnomon.withdrawTokens(address(rewardTokens[2]), address(player1), 10000000000);
+    //     console.logUint(IERC20(rewardTokens[2]).balanceOf(address(player1)));
+    // }
+
+    // function testReadBalance () public {
+    //     uint256[] memory balances = gnomon.getBalances(address(player2));
+    //     console.logString("read balances");
+    //     for(uint256 i = 0 ;i < 15; ++i)
+    //         console.logUint(balances[i]);
+    // }
+
+
+    function testBatchMint () public {
+        mysteryBox.batchMint(100, address(this));
+        console.logUint(mysteryBox.balanceOf(address(this)));
     }
 
 }

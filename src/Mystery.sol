@@ -2,10 +2,13 @@
 pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IMystery.sol";
 
 contract MysteryBox is ERC721, Ownable, IMystery {
 
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
     address public gnomon;
     uint256 [] public gnomonOwnedIDs;
     mapping (uint256 => uint256) public gnomonIDMap;
@@ -50,18 +53,23 @@ contract MysteryBox is ERC721, Ownable, IMystery {
     }
 
     function getRewardTokenID () external view returns (uint256 id) {
+        if(gnomonOwnedIDs.length == 0)
+            id = 0;
         id = gnomonOwnedIDs[0];
     }
 
     function setGnomon (address _gnomon) external onlyOwner {
         gnomon = _gnomon;
     }
-    
 
-    function preMintForTest () external onlyOwner {
-        for (uint256 i = 0; i < 100; ++ i){
-            _mint(gnomon, i);
+    function batchMint (uint256 batchCount, address to) external onlyOwner {
+        for(uint256 i = 0; i < batchCount;){
+            uint256 _currentTkID = _tokenIds.current();
+            _mint(to, _currentTkID);
+            unchecked {
+                i+=1;
+                _tokenIds.increment();
+            }
         }
     }
-
 }

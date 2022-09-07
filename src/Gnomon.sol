@@ -96,6 +96,7 @@ contract Gnomon is Ownable, IERC721Receiver {
     }
 
     function getBalances (address player) external view returns (uint256[] memory balances) {
+        balances = new uint256[](15);
         for(uint256 i = 0; i < 11; ++i) {
             IERC20 token = IERC20(commonTiers[i].token);
             balances[i] = token.balanceOf(player);
@@ -217,15 +218,24 @@ contract Gnomon is Ownable, IERC721Receiver {
                 require( IERC721(mystery).balanceOf(address(this)) > 0, "insufficient nft balance" );
                 // send an nft to the user
                 uint256 tokenIDToSend = IMystery(mystery).getRewardTokenID();
-                IERC721(mystery).transferFrom(
-                    address(this),
-                    msg.sender,
-                    tokenIDToSend
-                );
-                // update last reward time
-                playerNFTRewarded[msg.sender][tier] = block.timestamp;
-                _storeReward(msg.sender,tier,_tierDetails.token, tokenIDToSend);
-                emit RewardedFromGnomon (msg.sender, _tierDetails.token, tier, tokenIDToSend);
+                if(tokenIDToSend == 0){
+                    uint256 originalTicket = tickets[msg.sender][tier];
+                    // we give 2 more tickets since user can't get any reward
+                    tickets[msg.sender][tier] = originalTicket + 2;
+                    _storeReward(msg.sender, tier, address(0),2);
+                    emit RewardedFromGnomon(msg.sender, address(0), 2, 2);
+                }
+                else{
+                    IERC721(mystery).transferFrom(
+                        address(this),
+                        msg.sender,
+                        tokenIDToSend
+                    );
+                    // update last reward time
+                    playerNFTRewarded[msg.sender][tier] = block.timestamp;
+                    _storeReward(msg.sender,tier,_tierDetails.token, tokenIDToSend);
+                    emit RewardedFromGnomon (msg.sender, _tierDetails.token, tier, tokenIDToSend);
+                }
             }
         }
         else{
